@@ -1,0 +1,1 @@
+Building an ALU - a set of chips who carry out the basic arithmetic actions
