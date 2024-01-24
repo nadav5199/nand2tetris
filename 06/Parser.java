@@ -20,9 +20,9 @@ class Parser {
     public void advance() {
         String next = null;
         if (hasMoreLines()) {
-            next = file.nextLine();
+            next = file.nextLine().replaceAll("\\s", "");
             while (next.isEmpty() || next.startsWith("//")) {
-                next = file.nextLine();
+                next = file.nextLine().replaceAll("\\s", "");
             }
         }
         instruction = next;

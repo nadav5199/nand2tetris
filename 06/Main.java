@@ -1,23 +1,19 @@
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
-
-public class HackAssembler {
+public class Main {
+    static int countVar = 0;
+    static int countNew = 16;
     public static void main(String[] args) {
         try {
             Parser parser1 = new Parser(args[0]);
             Parser parser2 = new Parser(args[0]);
             SymbolTable symbolTable = new SymbolTable();
             init(symbolTable);
-            int countLine = 0;
-            int countVar = 16;
             // create new hack file.
             String path = args[0].replaceAll(".asm", ".hack");
             File file = new File(path);
             if (file.createNewFile()) {
                 System.out.println("File created: " + file.getName());
-            } else {
-                System.out.println("File already exists");
             }
             FileWriter newFile = new FileWriter(path);
             StringBuilder line = new StringBuilder();
@@ -27,9 +23,10 @@ public class HackAssembler {
                     String symbol = parser1.symbol();
                     if (!symbolTable.contains(symbol)) {
                         symbolTable.addEntry(symbol, countVar);
-                        countVar++;
+                        countVar--;
                     }
                 }
+                countVar++;
             }
             while (parser2.hasMoreLines()) {
                 parser2.advance();
@@ -39,19 +36,23 @@ public class HackAssembler {
                     line.append(Code.comp(parser2.comp()));
                     line.append(Code.dest(parser2.dest()));
                     line.append(Code.jump(parser2.jump()));
-                    newFile.write(line.toString() + "\n");
-                } else {
+                    line.append("\n");
+                    newFile.write(line.toString());
+                } else if (parser2.instructionType().equals("A_INSTRUCTION")) {
                     String symbol = parser2.symbol();
-                    int val;
-                    String bin;
-                    if (!symbolTable.contains(symbol)) {
-                        symbolTable.addEntry(symbol, countVar);
-                        countVar++;
+                    int val = countNew;
+                    if (convertStringToInteger(symbol) != null){
+                        val = convertStringToInteger(symbol);
+                        symbol = "R" + val;
                     }
+                    if (!symbolTable.contains(symbol)) {
+                        symbolTable.addEntry(symbol, val);
+                        countNew++;
+                    }
+                    String bin;
                     val = symbolTable.getAddress(symbol);
                     bin = Integer.toBinaryString(0x10000 | val).substring(1);
                     newFile.write(bin + "\n");
-
                 }
             }
             newFile.close();
@@ -73,6 +74,16 @@ public class HackAssembler {
         symbolTable.addEntry("ARG", 2);
         symbolTable.addEntry("THIS", 3);
         symbolTable.addEntry("THAT", 4);
+    }
+
+    public static Integer convertStringToInteger(String str) {
+        try {
+            // Attempt to parse the string as an integer
+            return Integer.parseInt(str);
+        } catch (NumberFormatException e) {
+            // If an exception is thrown, the string is not a valid integer
+            return null;
+        }
     }
 }
 
